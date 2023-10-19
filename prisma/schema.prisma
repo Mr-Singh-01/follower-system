@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Privacy {
+  PUBLIC
+  PRIVATE
+}
+
+enum Request {
+  ACCEPTED
+  DECLINED
+  PENDING
+  NULL
+}
+
+model User {
+  id String @id @default(uuid())
+
+  username String @unique
+  email    String @unique
+  password String @db.VarChar(75)
+
+  resetPasswordToken  String?   @unique
+  resetPasswordExpire DateTime?
+
+  verificationToken String? @unique
+  isEmailConfirmed  Boolean @default(false)
+  privacy           Privacy @default(PUBLIC)
+
+  followers Follows[] @relation("following")
+  following Follows[] @relation("follower")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([username, email])
+  @@index([email])
+}
+
+model Follows {
+  follower      User   @relation("follower", fields: [followerName], references: [username], onDelete: Cascade)
+  followerName  String
+  following     User   @relation("following", fields: [followingName], references: [username], onDelete: Cascade)
+  followingName String
+
+  accepted Boolean @default(false)
+  status   Request @default(NULL)
+
+  @@id([followerName, followingName])
+}
