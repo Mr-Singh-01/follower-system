@@ -15,14 +15,15 @@ export const privacy = async (
   const { username } = req.params;
 
   try {
-    const profile = (await prisma.user.findUnique({
+    const profile = await prisma.user.findUnique({
       where: {
         username,
       },
       select: {
         privacy: true,
+        username: true,
       },
-    })) as unknown as any;
+    });
 
     if (profile?.privacy === 'PRIVATE' && jwt) {
       const decoded = JWT.verify(jwt, process.env.JWT_SECRET!) as JwtPayload;
@@ -55,7 +56,7 @@ export const privacy = async (
 
       req.user = userWithoutPassword;
 
-      const userAccount = (await prisma.user.findUnique({
+      const userAccount = await prisma.user.findUnique({
         where: {
           username,
         },
@@ -73,9 +74,9 @@ export const privacy = async (
             },
           },
         },
-      })) as unknown as any;
+      });
 
-      const friendship = (await prisma.follows.findFirst({
+      const friendship = await prisma.follows.findFirst({
         where: {
           followerName: req.user?.username,
         },
@@ -83,7 +84,7 @@ export const privacy = async (
           followingName: true,
           status: true,
         },
-      })) as unknown as any;
+      });
 
       const accountIsPrivate = userAccount?.privacy === 'PRIVATE';
       const approvedFollower = friendship?.status === 'ACCEPTED';
@@ -95,6 +96,7 @@ export const privacy = async (
           .json({ success: false, message: 'User is private' });
       }
     }
+
     next();
   } catch (err) {
     next(err);
